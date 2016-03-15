@@ -27,21 +27,22 @@ public class CascadingMaxTempSecondrysort
 
     public static void main(String[] args)
     {
-        String inputPath = "/Users/hadoop/MaxTempInputSmallFiles";
+        String inputPath = args[0];
         Scheme sourceScheme = new TextLine();
         Tap source = new Lfs(sourceScheme, inputPath);
 
-        String outputPath = "/Users/hadoop/MaxTempOutputCascadingSS";
+        String outputPath = args[1];      
         Tap sink = new Lfs(new TextDelimited(Fields.ALL, ","), outputPath, SinkMode.REPLACE);
 
         Pipe assembly = new Pipe("Assembler");
 
         Fields ipMethod = new Fields("offset", "line");
-        
+
         Pipe result = new Each(assembly, ipMethod, new MaxTempFunction(new Fields("year", "temp")), Fields.RESULTS);
-        
+
         result = new GroupBy(result, new Fields("year"), new Fields("temp"));
         result = new Every(result, Fields.ALL, new Last(), Fields.RESULTS);
+        
         FlowConnector flowconnector = new HadoopFlowConnector(getPropertiesForCascadingJob());
 
         FlowDef flowDef = FlowDef.flowDef()
